@@ -94,3 +94,33 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_sigalarm(void)
+{
+  int interval;
+  uint64 handler;
+
+  argint(0, &interval);
+  argaddr(1, &handler);
+
+  if (interval <= 0)
+    return -1;
+
+  struct proc *p = myproc();
+  p->alarminterval = interval;
+  p->alarmhandler = (void(*)())handler;
+  p->elapsedticks = 0;
+  p->enablealarm = 1;
+
+  return 0;
+}
+
+uint64
+sys_sigreturn(void)
+{
+  struct proc *p = myproc();
+  *p->trapframe = *p->savetrapframe;
+  p->enablealarm = 1; // enable so test1 passes
+  return p->trapframe->a0;
+}

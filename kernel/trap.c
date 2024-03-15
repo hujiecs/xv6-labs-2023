@@ -77,8 +77,20 @@ usertrap(void)
     exit(-1);
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2)
-    yield();
+  if(which_dev == 2) {
+    // cannot check p->alarmhandler != 0, because I found its value is actually 0!
+    // which mean the addr of periodic is 0.
+    if (p->alarminterval > 0 && p->enablealarm) {
+      p->elapsedticks++;
+      if (p->elapsedticks == p->alarminterval) {
+        *p->savetrapframe = *p->trapframe; // use deep copy
+        p->trapframe->epc = (uint64)p->alarmhandler;
+        p->enablealarm = 0; // prevent re-entering
+        p->elapsedticks = 0;
+      }
+    }
+    yield(); // need keep yield() otherwise test like preempt() will fail.
+  }
 
   usertrapret();
 }
