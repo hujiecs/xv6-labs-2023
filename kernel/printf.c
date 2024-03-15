@@ -133,3 +133,16 @@ printfinit(void)
   initlock(&pr.lock, "pr");
   pr.locking = 1;
 }
+
+void
+backtrace(void)
+{
+  uint64 fp = r_fp();
+
+  // stack is PGSIZE
+  while ((fp != PGROUNDDOWN(fp))) {
+    uint64 retaddr = *(uint64 *)(fp - 8);
+    printf("%p\n", retaddr);
+    fp = *(uint64 *)(fp - 16);
+  }
+}
