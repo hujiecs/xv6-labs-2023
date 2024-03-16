@@ -5,6 +5,11 @@
 #include "riscv.h"
 #include "defs.h"
 #include "fs.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "fcntl.h"
+#include "file.h"
+#include "proc.h"
 
 /*
  * the kernel's page table.
@@ -195,6 +200,34 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       kfree((void*)pa);
     }
     *pte = 0;
+  }
+}
+
+void
+vmaunmap(pagetable_t pagetable, uint64 va, uint64 npages, struct vma *v)
+{
+  uint64 a;
+  pte_t *pte;
+
+  if((va % PGSIZE) != 0)
+    panic("uvmunmap: not aligned");
+  
+  for (a = va; a < va + npages * PGSIZE; a += PGSIZE) {
+    if ((pte = walk(pagetable, a, 0))) {
+      if (*pte & PTE_V) {
+        uint64 pa = PTE2PA(*pte);
+        if (v->flags & MAP_SHARED && (*pte & PTE_D)) {
+          begin_op();
+          ilock(v->f->ip);
+          writei(v->f->ip, 0, pa, v->offset + a - v->address, PGSIZE);
+          iunlock(v->f->ip);
+          end_op();
+        }
+
+        kfree((void*)pa);
+        *pte = 0;
+      }
+    }
   }
 }
 

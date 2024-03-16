@@ -146,6 +146,9 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  for (int i = 0; i < 16; i++)
+    p->vmas[i].address = 0;
+
   return p;
 }
 
@@ -312,6 +315,14 @@ fork(void)
 
   pid = np->pid;
 
+  for (int i = 0; i < 16; i++) {
+    struct vma *v = &p->vmas[i];
+    if (v->address) {
+      np->vmas[i] = *v;
+      filedup(v->f); 
+    }
+  }
+
   release(&np->lock);
 
   acquire(&wait_lock);
@@ -350,6 +361,13 @@ exit(int status)
 
   if(p == initproc)
     panic("init exiting");
+
+  for (int i = 0; i < 16; i++) {
+    if (p->vmas[i].address) {
+      vmaunmap(p->pagetable, p->vmas[i].address, p->vmas[i].size / PGSIZE, &p->vmas[i]);
+      p->vmas[i].address = 0;
+    }
+  }
 
   // Close all open files.
   for(int fd = 0; fd < NOFILE; fd++){

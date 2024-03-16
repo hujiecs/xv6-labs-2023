@@ -1,6 +1,7 @@
 #ifdef LAB_MMAP
 typedef unsigned long size_t;
 typedef long int off_t;
+struct vma;
 #endif
 struct buf;
 struct context;
@@ -155,6 +156,9 @@ int             fetchstr(uint64, char*, int);
 int             fetchaddr(uint64, uint64*);
 void            syscall();
 
+// sysfile.c
+int             vmalazyalloc(uint64);
+
 // trap.c
 extern uint     ticks;
 void            trapinit(void);
@@ -181,6 +185,7 @@ uint64          uvmdealloc(pagetable_t, uint64, uint64);
 int             uvmcopy(pagetable_t, pagetable_t, uint64);
 void            uvmfree(pagetable_t, uint64);
 void            uvmunmap(pagetable_t, uint64, uint64, int);
+void            vmaunmap(pagetable_t, uint64, uint64, struct vma *);
 void            uvmclear(pagetable_t, uint64);
 pte_t *         walk(pagetable_t, uint64, int);
 uint64          walkaddr(pagetable_t, uint64);
