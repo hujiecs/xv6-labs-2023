@@ -154,6 +154,7 @@ void            uartintr(void);
 void            uartputc(int);
 void            uartputc_sync(int);
 int             uartgetc(void);
+void            uartpoll(void);
 
 // vm.c
 void            kvminit(void);

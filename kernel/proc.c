@@ -470,6 +470,8 @@ scheduler(void)
       }
       release(&p->lock);
     }
+
+    uartpoll();
   }
 }
 

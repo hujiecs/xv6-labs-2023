@@ -72,7 +72,7 @@ uartinit(void)
   WriteReg(FCR, FCR_FIFO_ENABLE | FCR_FIFO_CLEAR);
 
   // enable transmit and receive interrupts.
-  WriteReg(IER, IER_TX_ENABLE | IER_RX_ENABLE);
+  // WriteReg(IER, IER_TX_ENABLE | IER_RX_ENABLE);
 
   initlock(&uart_tx_lock, "uart");
 }
@@ -156,30 +156,12 @@ uartstart()
   }
 }
 
-// read one input character from the UART.
-// return -1 if none is waiting.
-int
-uartgetc(void)
-{
-  if(ReadReg(LSR) & 0x01){
-    // input data is ready.
-    return ReadReg(RHR);
-  } else {
-    return -1;
-  }
-}
-
-// handle a uart interrupt, raised because input has
-// arrived, or the uart is ready for more output, or
-// both. called from devintr().
 void
-uartintr(void)
+uartpoll(void)
 {
   // read and process incoming characters.
-  while(1){
-    int c = uartgetc();
-    if(c == -1)
-      break;
+  while ((ReadReg(LSR) & LSR_RX_READY) == 1) {
+    int c = ReadReg(RHR);
     consoleintr(c);
   }
 
